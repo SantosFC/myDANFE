@@ -24,6 +24,7 @@ class Item:
     quantidade: float
     valor_unitario: float
     valor_total: float
+    ean: str = ""
 
 
 def _text(element, path: str) -> str:
@@ -67,6 +68,7 @@ def parse_xml(xml_path: Path) -> list[Item]:
                 quantidade=float(_text(prod, "nfe:qCom") or 0),
                 valor_unitario=float(_text(prod, "nfe:vUnCom") or 0),
                 valor_total=float(_text(prod, "nfe:vProd") or 0),
+                ean=_text(prod, "nfe:cEAN"),
             )
         )
     return items

@@ -25,8 +25,9 @@ RE_ITEM = re.compile(
     r"^(\d+)\s*\t\s*(.+?)\s*\t\s*([\d,]+)\s*\t\s*(\w+)\s*\t\s*([\d,]+)",
     re.MULTILINE,
 )
-RE_COD = re.compile(r"Código do Produto\n(\S+)")
-RE_NCM = re.compile(r"Código NCM\n(\d+)")
+RE_COD  = re.compile(r"Código do Produto\n(\S+)")
+RE_NCM  = re.compile(r"Código NCM\n(\d+)")
+RE_EAN  = re.compile(r"Código EAN Comercial\n(\S+)")
 RE_VUNIT = re.compile(r"Valor unitário de comercialização\n([\d,]+)")
 
 
@@ -55,6 +56,7 @@ def parse_txt(txt_path: Path) -> list[Item]:
     item_matches = list(RE_ITEM.finditer(text))
     codigos = [x.group(1) for x in RE_COD.finditer(text)]
     ncms    = [x.group(1) for x in RE_NCM.finditer(text)]
+    eans    = [x.group(1) for x in RE_EAN.finditer(text)]
     vunits  = [x.group(1) for x in RE_VUNIT.finditer(text)]
 
     items = []
@@ -62,6 +64,7 @@ def parse_txt(txt_path: Path) -> list[Item]:
         qtd    = _num(it.group(3))
         vtotal = _num(it.group(5))
         vunit  = _num(vunits[i]) if i < len(vunits) else (vtotal / qtd if qtd else 0)
+        ean_raw = eans[i] if i < len(eans) else ""
         items.append(Item(
             nfe_chave      = chave,
             data_emissao   = data_emissao,
@@ -74,6 +77,7 @@ def parse_txt(txt_path: Path) -> list[Item]:
             quantidade     = qtd,
             valor_unitario = vunit,
             valor_total    = vtotal,
+            ean            = "" if ean_raw.upper() in ("SEM GTIN", "") else ean_raw,
         ))
 
     if not items:
