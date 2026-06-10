@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
-"""Script CLI para importar XMLs de NFe sem abrir o painel."""
+"""Script CLI para importar XMLs e PDFs de NFe/NFC-e sem abrir o painel."""
 
 from pathlib import Path
 from src.parser import parse_directory
+from src.pdf_parser import parse_pdf_directory
 from src.db import init_db, insert_items
 
 XML_DIR = Path("data/xmls")
+PDF_DIR = Path("data/pdfs")
 
 
 def main():
     init_db()
-    items = parse_directory(XML_DIR)
+    items = parse_directory(XML_DIR) + parse_pdf_directory(PDF_DIR)
     if not items:
-        print("Nenhum XML encontrado em data/xmls/")
+        print("Nenhum XML em data/xmls/ nem PDF em data/pdfs/")
         return
     inserted = insert_items(items)
     print(f"{inserted} novos itens inseridos de {len(items)} registros lidos.")

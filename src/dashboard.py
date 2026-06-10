@@ -7,16 +7,19 @@ import plotly.graph_objects as go
 import pandas as pd
 
 from .parser import parse_directory
+from .pdf_parser import parse_pdf_directory
 from .db import init_db, insert_items, query_all
 from .inflation import build_dataframe, inflacao_pessoal_mensal, preco_medio_mensal, top_produtos_por_gasto
 from .ipca import fetch_ipca
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 XML_DIR = DATA_DIR / "xmls"
+PDF_DIR = DATA_DIR / "pdfs"
 
 
-def ingest_xmls():
-    items = parse_directory(XML_DIR)
+def ingest_files():
+    PDF_DIR.mkdir(parents=True, exist_ok=True)
+    items = parse_directory(XML_DIR) + parse_pdf_directory(PDF_DIR)
     if items:
         init_db()
         inserted = insert_items(items)
@@ -29,12 +32,12 @@ st.title("📊 Inflação Pessoal — myDANFE")
 
 # --- Barra lateral ---
 with st.sidebar:
-    st.header("Importar XMLs")
-    st.caption(f"Coloque seus XMLs de NFe em `data/xmls/`")
-    if st.button("🔄 Processar XMLs agora"):
-        inserted, total = ingest_xmls()
+    st.header("Importar notas")
+    st.caption("XMLs em `data/xmls/` · PDFs de DANFE NFC-e em `data/pdfs/`")
+    if st.button("🔄 Processar notas agora"):
+        inserted, total = ingest_files()
         if total == 0:
-            st.warning("Nenhum XML encontrado.")
+            st.warning("Nenhum XML ou PDF encontrado.")
         else:
             st.success(f"{inserted} novos itens de {total} registros processados.")
 
@@ -51,7 +54,7 @@ except Exception as exc:
     st.stop()
 
 if not rows:
-    st.info("Nenhum dado ainda. Adicione XMLs de NFe em `data/xmls/` e clique em **Processar XMLs agora**.")
+    st.info("Nenhum dado ainda. Adicione XMLs em `data/xmls/` ou PDFs em `data/pdfs/` e clique em **Processar notas agora**.")
     st.stop()
 
 df = build_dataframe(rows)

@@ -7,9 +7,11 @@ Calcula sua inflação pessoal a partir de XMLs de Nota Fiscal Eletrônica (NFe/
 ```
 myDANFE/
 ├── data/
-│   └── xmls/        ← coloque seus XMLs aqui
+│   ├── xmls/        ← XMLs de NFe/NFC-e
+│   └── pdfs/        ← PDFs de DANFE NFC-e (consulta pública Sefaz-SP)
 ├── src/
 │   ├── parser.py    ← leitura de XMLs de NFe
+│   ├── pdf_parser.py← leitura de PDFs de DANFE NFC-e
 │   ├── db.py        ← persistência MariaDB
 │   ├── inflation.py ← cálculos de inflação pessoal
 │   ├── ipca.py      ← série IPCA via API IBGE
@@ -43,9 +45,14 @@ A tabela é criada automaticamente na primeira execução.
 
 ## Uso
 
-### 1. Importar XMLs
+### 1. Importar notas
 
-Coloque os XMLs de NFe na pasta `data/xmls/` e execute:
+Coloque XMLs em `data/xmls/` e/ou PDFs de DANFE NFC-e em `data/pdfs/` e execute:
+
+> **Dica (SP)**: o portal da Sefaz-SP não oferece download do XML para
+> consumidor, mas a página de consulta pública da NFC-e (acessada pelo
+> QR code do cupom) pode ser salva como PDF (Ctrl+P → Salvar como PDF).
+> Esses PDFs são lidos automaticamente.
 
 ```bash
 python ingest.py
