@@ -27,7 +27,7 @@ RE_ITEM = re.compile(
 )
 RE_COD  = re.compile(r"Código do Produto\n(\S+)")
 RE_NCM  = re.compile(r"Código NCM\n(\d+)")
-RE_EAN  = re.compile(r"Código EAN Comercial\n(\S+)")
+RE_EAN  = re.compile(r"Código EAN Comercial\n([^\n\t]+)")
 RE_VUNIT = re.compile(r"Valor unitário de comercialização\n([\d,]+)")
 
 

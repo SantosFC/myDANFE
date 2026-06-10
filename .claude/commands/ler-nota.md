@@ -7,8 +7,10 @@ The user will paste two text blocks from the Sefaz-SP NFC-e consultation page:
 2. The **Produtos/Serviços tab** (contains item list)
 
 Both blocks are pasted together in the user's message. Identify them by their content:
-- NFe tab contains: "Emitente", "CNPJ", "Nome / Razão Social", "Valor Total da Nota Fiscal"
+- NFe or Emitente tab contains: "CNPJ", "Nome / Razão Social" (and optionally "Valor Total da Nota Fiscal" or "Dados do Emitente")
 - Produtos tab contains: "Dados dos Produtos e Serviços", "Código do Produto", "Valor unitário de comercialização"
+
+The parser handles both the NFe tab and the Emitente tab automatically.
 
 ## Steps
 
