@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.pdf_parser import RE_ITEM, RE_CHAVE, RE_EMISSAO, _num
+from src.pdf_parser import RE_ITEM_RESUMO as RE_ITEM, RE_CHAVE_RESUMO as RE_CHAVE, RE_EMISSAO_RESUMO as RE_EMISSAO, _num
 
 SAMPLE_TEXT = """NH10 Comercio de Alimentos Ltda
 CNPJ: 35.794.786/0003-02
