@@ -1,0 +1,4 @@
+*.pyc
+__pycache__/
+data/db/
+data/xmls/
