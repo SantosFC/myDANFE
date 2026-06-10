@@ -35,11 +35,12 @@ def _config() -> dict:
 SCHEMA_STATEMENTS = [
     """
     CREATE TABLE IF NOT EXISTS emitente (
-        cnpj        VARCHAR(14)  NOT NULL PRIMARY KEY,
-        nome        VARCHAR(255),
-        logradouro  VARCHAR(255),
-        municipio   VARCHAR(100),
-        uf          CHAR(2)
+        cnpj            VARCHAR(14)  NOT NULL PRIMARY KEY,
+        nome            VARCHAR(255),
+        nome_fantasia   VARCHAR(255),
+        logradouro      VARCHAR(255),
+        municipio       VARCHAR(100),
+        uf              CHAR(2)
     )
     """,
     """
@@ -106,15 +107,20 @@ def init_db() -> None:
                 cur.execute(stmt)
 
 
-def upsert_emitente(cnpj: str, nome: str, logradouro: str = "", municipio: str = "", uf: str = "") -> None:
+def upsert_emitente(cnpj: str, nome: str, nome_fantasia: str = "",
+                    logradouro: str = "", municipio: str = "", uf: str = "") -> None:
     sql = """
-        INSERT INTO emitente (cnpj, nome, logradouro, municipio, uf)
-        VALUES (%s, %s, %s, %s, %s)
-        ON CONFLICT (cnpj) DO NOTHING
+        INSERT INTO emitente (cnpj, nome, nome_fantasia, logradouro, municipio, uf)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON CONFLICT (cnpj) DO UPDATE SET
+            nome_fantasia = EXCLUDED.nome_fantasia,
+            logradouro    = EXCLUDED.logradouro,
+            municipio     = EXCLUDED.municipio,
+            uf            = EXCLUDED.uf
     """
     with _conn() as con:
         with con.cursor() as cur:
-            cur.execute(sql, (cnpj, nome, logradouro, municipio, uf))
+            cur.execute(sql, (cnpj, nome, nome_fantasia, logradouro, municipio, uf))
 
 
 def upsert_nota(chave: str, cnpj_emitente: str, data_emissao, numero: str = "", serie: str = "", valor_total=None) -> None:
@@ -247,6 +253,7 @@ def ingest_nota(emitente: dict, nota: dict, itens: list[dict]) -> int:
     upsert_emitente(
         cnpj=emitente["cnpj"],
         nome=emitente.get("nome", ""),
+        nome_fantasia=emitente.get("nome_fantasia", ""),
         logradouro=emitente.get("logradouro", ""),
         municipio=emitente.get("municipio", ""),
         uf=emitente.get("uf", ""),

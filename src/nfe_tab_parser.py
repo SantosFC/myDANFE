@@ -26,6 +26,7 @@ RE_EMITENTE_NFE = re.compile(
 
 # --- Aba Emitente ---
 RE_NOME_EMIT    = re.compile(r"Nome / Razão Social\s*\n(.+?)\s*\t")
+RE_NOME_FANTASIA = re.compile(r"Nome Fantasia\s*\n(.+?)\n")
 RE_CNPJ_EMIT    = re.compile(r"CNPJ\s*\n([\d./\-]+)\s*\t")
 RE_LOGRADOURO   = re.compile(r"Endere[çc]o\s*\n(.+?)\n")
 RE_MUNICIPIO    = re.compile(r"Munic[íi]pio\s*\n\d+ - (.+?)\s*\t")
@@ -52,11 +53,12 @@ def _detect_tab(text: str) -> str:
 
 
 def _parse_aba_emitente(text: str, chave: str) -> dict:
-    m_nome = RE_NOME_EMIT.search(text)
-    m_cnpj = RE_CNPJ_EMIT.search(text)
-    m_uf   = RE_UF_EMIT.search(text)
-    m_log  = RE_LOGRADOURO.search(text)
-    m_mun  = RE_MUNICIPIO.search(text)
+    m_nome    = RE_NOME_EMIT.search(text)
+    m_fantasia = RE_NOME_FANTASIA.search(text)
+    m_cnpj    = RE_CNPJ_EMIT.search(text)
+    m_uf      = RE_UF_EMIT.search(text)
+    m_log     = RE_LOGRADOURO.search(text)
+    m_mun     = RE_MUNICIPIO.search(text)
 
     if not m_cnpj or not m_nome:
         raise ValueError("CNPJ ou Nome do emitente não encontrados na aba Emitente.")
@@ -66,11 +68,12 @@ def _parse_aba_emitente(text: str, chave: str) -> dict:
 
     return {
         "emitente": {
-            "cnpj":       cnpj,
-            "nome":       m_nome.group(1).strip(),
-            "uf":         m_uf.group(1).strip() if m_uf else "",
-            "logradouro": m_log.group(1).strip() if m_log else "",
-            "municipio":  m_mun.group(1).strip() if m_mun else "",
+            "cnpj":          cnpj,
+            "nome":          m_nome.group(1).strip(),
+            "nome_fantasia": m_fantasia.group(1).strip() if m_fantasia else "",
+            "uf":            m_uf.group(1).strip() if m_uf else "",
+            "logradouro":    m_log.group(1).strip() if m_log else "",
+            "municipio":     m_mun.group(1).strip() if m_mun else "",
         },
         "nota": {
             "chave":        chave,
