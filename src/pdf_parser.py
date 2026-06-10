@@ -66,7 +66,7 @@ def _chave_completa_para_44(raw: str) -> str:
 
 
 def _detect_layout(text: str) -> str:
-    if "DADOS DOS PRODUTOS E SERVIÇOS" in text:
+    if "DADOS DOS PRODUTOS E SERVIÇOS" in text.upper():
         return "completa"
     return "resumo"
 
