@@ -7,11 +7,10 @@ Calcula sua inflação pessoal a partir de XMLs de Nota Fiscal Eletrônica (NFe/
 ```
 myDANFE/
 ├── data/
-│   ├── xmls/        ← coloque seus XMLs aqui
-│   └── db/          ← banco SQLite gerado automaticamente
+│   └── xmls/        ← coloque seus XMLs aqui
 ├── src/
 │   ├── parser.py    ← leitura de XMLs de NFe
-│   ├── db.py        ← persistência SQLite
+│   ├── db.py        ← persistência MariaDB
 │   ├── inflation.py ← cálculos de inflação pessoal
 │   ├── ipca.py      ← série IPCA via API IBGE
 │   └── dashboard.py ← painel Streamlit
@@ -24,6 +23,23 @@ myDANFE/
 ```bash
 pip install -r requirements.txt
 ```
+
+## Configuração do banco (MariaDB)
+
+No seu VPS, crie o banco e o usuário:
+
+```sql
+CREATE DATABASE mydanfe CHARACTER SET utf8mb4;
+CREATE USER 'danfe'@'%' IDENTIFIED BY 'sua-senha';
+GRANT ALL PRIVILEGES ON mydanfe.* TO 'danfe'@'%';
+FLUSH PRIVILEGES;
+```
+
+Depois copie `.env.example` para `.env` e preencha host, usuário e senha.
+A tabela é criada automaticamente na primeira execução.
+
+> **Dica de segurança**: prefira restringir o usuário ao IP da sua máquina
+> (`'danfe'@'seu.ip'`) ou usar um túnel SSH em vez de expor a porta 3306.
 
 ## Uso
 

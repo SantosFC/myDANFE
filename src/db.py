@@ -1,41 +1,65 @@
-"""Camada de persistência SQLite."""
+"""Camada de persistência MariaDB.
 
-import sqlite3
-from pathlib import Path
+Configuração via variáveis de ambiente (ou arquivo .env):
+    DANFE_DB_HOST      (default: localhost)
+    DANFE_DB_PORT      (default: 3306)
+    DANFE_DB_USER      (default: danfe)
+    DANFE_DB_PASSWORD
+    DANFE_DB_NAME      (default: mydanfe)
+"""
+
+import os
 from contextlib import contextmanager
+
+import pymysql
+import pymysql.cursors
 
 from .parser import Item
 
-DEFAULT_DB = Path(__file__).parent.parent / "data" / "db" / "danfe.db"
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+
+def _config() -> dict:
+    return {
+        "host": os.environ.get("DANFE_DB_HOST", "localhost"),
+        "port": int(os.environ.get("DANFE_DB_PORT", "3306")),
+        "user": os.environ.get("DANFE_DB_USER", "danfe"),
+        "password": os.environ.get("DANFE_DB_PASSWORD", ""),
+        "database": os.environ.get("DANFE_DB_NAME", "mydanfe"),
+        "charset": "utf8mb4",
+        "cursorclass": pymysql.cursors.DictCursor,
+    }
 
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS compras (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    nfe_chave       TEXT NOT NULL,
-    data_emissao    TEXT NOT NULL,
-    cnpj_emitente   TEXT NOT NULL,
-    nome_emitente   TEXT NOT NULL,
-    codigo_produto  TEXT NOT NULL,
-    descricao       TEXT NOT NULL,
-    ncm             TEXT,
-    unidade         TEXT,
-    quantidade      REAL NOT NULL,
-    valor_unitario  REAL NOT NULL,
-    valor_total     REAL NOT NULL,
-    UNIQUE(nfe_chave, codigo_produto)
-);
-
-CREATE INDEX IF NOT EXISTS idx_descricao ON compras(descricao);
-CREATE INDEX IF NOT EXISTS idx_data      ON compras(data_emissao);
-CREATE INDEX IF NOT EXISTS idx_cnpj      ON compras(cnpj_emitente);
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    nfe_chave       VARCHAR(44)  NOT NULL,
+    data_emissao    DATE         NOT NULL,
+    cnpj_emitente   VARCHAR(14)  NOT NULL,
+    nome_emitente   VARCHAR(255) NOT NULL,
+    codigo_produto  VARCHAR(60)  NOT NULL,
+    descricao       VARCHAR(255) NOT NULL,
+    ncm             VARCHAR(8),
+    unidade         VARCHAR(10),
+    quantidade      DECIMAL(15,4) NOT NULL,
+    valor_unitario  DECIMAL(15,4) NOT NULL,
+    valor_total     DECIMAL(15,2) NOT NULL,
+    UNIQUE KEY uq_nfe_produto (nfe_chave, codigo_produto),
+    INDEX idx_descricao (descricao),
+    INDEX idx_data (data_emissao),
+    INDEX idx_cnpj (cnpj_emitente)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 """
 
 
 @contextmanager
-def _conn(db_path: Path):
-    con = sqlite3.connect(db_path)
-    con.row_factory = sqlite3.Row
+def _conn():
+    con = pymysql.connect(**_config())
     try:
         yield con
         con.commit()
@@ -43,36 +67,37 @@ def _conn(db_path: Path):
         con.close()
 
 
-def init_db(db_path: Path = DEFAULT_DB) -> None:
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    with _conn(db_path) as con:
-        con.executescript(SCHEMA)
+def init_db() -> None:
+    with _conn() as con:
+        with con.cursor() as cur:
+            cur.execute(SCHEMA)
 
 
-def insert_items(items: list[Item], db_path: Path = DEFAULT_DB) -> int:
+def insert_items(items: list[Item]) -> int:
     """Insere itens ignorando duplicatas. Retorna quantos foram inseridos."""
     rows = [
         (
-            i.nfe_chave, str(i.data_emissao), i.cnpj_emitente, i.nome_emitente,
+            i.nfe_chave, i.data_emissao, i.cnpj_emitente, i.nome_emitente,
             i.codigo_produto, i.descricao, i.ncm, i.unidade,
             i.quantidade, i.valor_unitario, i.valor_total,
         )
         for i in items
     ]
     sql = """
-        INSERT OR IGNORE INTO compras
+        INSERT IGNORE INTO compras
         (nfe_chave, data_emissao, cnpj_emitente, nome_emitente,
          codigo_produto, descricao, ncm, unidade,
          quantidade, valor_unitario, valor_total)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
     """
-    with _conn(db_path) as con:
-        cur = con.executemany(sql, rows)
-        return cur.rowcount
+    with _conn() as con:
+        with con.cursor() as cur:
+            cur.executemany(sql, rows)
+            return cur.rowcount
 
 
-def query_all(db_path: Path = DEFAULT_DB):
-    with _conn(db_path) as con:
-        return con.execute(
-            "SELECT * FROM compras ORDER BY data_emissao"
-        ).fetchall()
+def query_all() -> list[dict]:
+    with _conn() as con:
+        with con.cursor() as cur:
+            cur.execute("SELECT * FROM compras ORDER BY data_emissao")
+            return cur.fetchall()

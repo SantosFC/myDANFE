@@ -13,14 +13,13 @@ from .ipca import fetch_ipca
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 XML_DIR = DATA_DIR / "xmls"
-DB_PATH = DATA_DIR / "db" / "danfe.db"
 
 
 def ingest_xmls():
     items = parse_directory(XML_DIR)
     if items:
-        init_db(DB_PATH)
-        inserted = insert_items(items, DB_PATH)
+        init_db()
+        inserted = insert_items(items)
         return inserted, len(items)
     return 0, 0
 
@@ -40,8 +39,16 @@ with st.sidebar:
             st.success(f"{inserted} novos itens de {total} registros processados.")
 
 # --- Carregar dados ---
-init_db(DB_PATH)
-rows = query_all(DB_PATH)
+try:
+    init_db()
+    rows = query_all()
+except Exception as exc:
+    st.error(
+        f"Erro ao conectar ao MariaDB: {exc}\n\n"
+        "Verifique as variáveis DANFE_DB_HOST, DANFE_DB_USER, "
+        "DANFE_DB_PASSWORD e DANFE_DB_NAME (veja .env.example)."
+    )
+    st.stop()
 
 if not rows:
     st.info("Nenhum dado ainda. Adicione XMLs de NFe em `data/xmls/` e clique em **Processar XMLs agora**.")

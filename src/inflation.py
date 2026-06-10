@@ -10,6 +10,9 @@ def build_dataframe(rows) -> pd.DataFrame:
         "quantidade", "valor_unitario", "valor_total",
     ]
     df = pd.DataFrame([dict(r) for r in rows], columns=cols)
+    # MariaDB retorna DECIMAL como decimal.Decimal — converte para float
+    for col in ("quantidade", "valor_unitario", "valor_total"):
+        df[col] = df[col].astype(float)
     df["data_emissao"] = pd.to_datetime(df["data_emissao"])
     df["ano_mes"] = df["data_emissao"].dt.to_period("M")
     return df
