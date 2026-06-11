@@ -107,11 +107,12 @@ def _parse_aba_nfe(text: str, chave: str) -> dict:
 
     return {
         "emitente": {
-            "cnpj":       re.sub(r"\D", "", m_emit.group(1)),
-            "nome":       m_emit.group(2).strip(),
-            "uf":         m_emit.group(3).strip(),
-            "logradouro": "",
-            "municipio":  "",
+            "cnpj":          re.sub(r"\D", "", m_emit.group(1)),
+            "nome":          m_emit.group(2).strip(),
+            "nome_fantasia": "",
+            "uf":            m_emit.group(3).strip(),
+            "logradouro":    "",
+            "municipio":     "",
         },
         "nota": {
             "chave":        chave,
