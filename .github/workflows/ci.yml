@@ -17,9 +17,10 @@ jobs:
           python-version: "3.12"
       - run: pip install ruff
       - run: ruff check .
+      - run: ruff format --check .
 
   test:
-    name: Tests (pytest)
+    name: Tests (pytest + coverage)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,4 +29,15 @@ jobs:
           python-version: "3.12"
       - run: pip install pytest pytest-cov
       - run: pip install -r requirements.txt
-      - run: pytest tests/ -v --tb=short
+      - run: pytest tests/ -v --tb=short --cov=src --cov-report=term-missing --cov-fail-under=15
+
+  security:
+    name: Security (bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install bandit
+      - run: bandit -r src/ -ll

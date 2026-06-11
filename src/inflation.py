@@ -21,7 +21,9 @@ def preco_medio_mensal(df: pd.DataFrame, descricao: str) -> pd.DataFrame:
     agg = (
         prod.groupby("ano_mes")
         .apply(
-            lambda g: (g["valor_unitario"] * g["quantidade"]).sum() / g["quantidade"].sum(),
+            lambda g: (
+                (g["valor_unitario"] * g["quantidade"]).sum() / g["quantidade"].sum()
+            ),
             include_groups=False,
         )
         .rename("preco_medio")

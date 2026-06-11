@@ -2,7 +2,12 @@
 
 import pytest
 
-from src.pdf_parser import RE_ITEM_RESUMO as RE_ITEM, RE_CHAVE_RESUMO as RE_CHAVE, RE_EMISSAO_RESUMO as RE_EMISSAO, _num
+from src.pdf_parser import (
+    RE_ITEM_RESUMO as RE_ITEM,
+    RE_CHAVE_RESUMO as RE_CHAVE,
+    RE_EMISSAO_RESUMO as RE_EMISSAO,
+    _num,
+)
 
 SAMPLE_TEXT = """NH10 Comercio de Alimentos Ltda
 CNPJ: 35.794.786/0003-02
@@ -35,7 +40,10 @@ def test_itens():
 def test_chave_e_emissao():
     chave = RE_CHAVE.search(SAMPLE_TEXT)
     assert chave is not None
-    assert "".join(chave.group(1).split()) == "35260635794786000302650040001638751374265845"
+    assert (
+        "".join(chave.group(1).split())
+        == "35260635794786000302650040001638751374265845"
+    )
     assert RE_EMISSAO.search(SAMPLE_TEXT).group(1) == "10/06/2026"
 
 

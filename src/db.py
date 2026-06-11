@@ -17,6 +17,7 @@ import psycopg2.extras
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass
@@ -26,6 +27,7 @@ def _get(key: str, default: str = "") -> str:
     """Lê configuração do st.secrets (Streamlit Cloud) ou os.environ (local)."""
     try:
         import streamlit as st
+
         return st.secrets.get(key, os.environ.get(key, default))
     except Exception:
         return os.environ.get(key, default)
@@ -33,11 +35,11 @@ def _get(key: str, default: str = "") -> str:
 
 def _config() -> dict:
     return {
-        "host":     _get("DANFE_DB_HOST", "localhost"),
-        "port":     int(_get("DANFE_DB_PORT", "5432")),
-        "user":     _get("DANFE_DB_USER", "postgres"),
+        "host": _get("DANFE_DB_HOST", "localhost"),
+        "port": int(_get("DANFE_DB_PORT", "5432")),
+        "user": _get("DANFE_DB_USER", "postgres"),
         "password": _get("DANFE_DB_PASSWORD", ""),
-        "dbname":   _get("DANFE_DB_NAME", "postgres"),
+        "dbname": _get("DANFE_DB_NAME", "postgres"),
     }
 
 
@@ -116,8 +118,14 @@ def init_db() -> None:
                 cur.execute(stmt)
 
 
-def upsert_emitente(cnpj: str, nome: str, nome_fantasia: str = "",
-                    logradouro: str = "", municipio: str = "", uf: str = "") -> None:
+def upsert_emitente(
+    cnpj: str,
+    nome: str,
+    nome_fantasia: str = "",
+    logradouro: str = "",
+    municipio: str = "",
+    uf: str = "",
+) -> None:
     sql = """
         INSERT INTO emitente (cnpj, nome, nome_fantasia, logradouro, municipio, uf)
         VALUES (%s, %s, %s, %s, %s, %s)
@@ -132,7 +140,14 @@ def upsert_emitente(cnpj: str, nome: str, nome_fantasia: str = "",
             cur.execute(sql, (cnpj, nome, nome_fantasia, logradouro, municipio, uf))
 
 
-def upsert_nota(chave: str, cnpj_emitente: str, data_emissao, numero: str = "", serie: str = "", valor_total=None) -> None:
+def upsert_nota(
+    chave: str,
+    cnpj_emitente: str,
+    data_emissao,
+    numero: str = "",
+    serie: str = "",
+    valor_total=None,
+) -> None:
     sql = """
         INSERT INTO nota (chave, cnpj_emitente, data_emissao, numero, serie, valor_total)
         VALUES (%s, %s, %s, %s, %s, %s)
@@ -140,11 +155,21 @@ def upsert_nota(chave: str, cnpj_emitente: str, data_emissao, numero: str = "", 
     """
     with _conn() as con:
         with con.cursor() as cur:
-            cur.execute(sql, (chave, cnpj_emitente, data_emissao, numero, serie, valor_total))
+            cur.execute(
+                sql, (chave, cnpj_emitente, data_emissao, numero, serie, valor_total)
+            )
 
 
-def insert_item(chave_nota: str, codigo_produto_nota: str, descricao_nota: str,
-                ncm: str, unidade: str, quantidade, valor_unitario, valor_total) -> int:
+def insert_item(
+    chave_nota: str,
+    codigo_produto_nota: str,
+    descricao_nota: str,
+    ncm: str,
+    unidade: str,
+    quantidade,
+    valor_unitario,
+    valor_total,
+) -> int:
     sql = """
         INSERT INTO item
         (chave_nota, codigo_produto_nota, descricao_nota, ncm, unidade,
@@ -154,8 +179,19 @@ def insert_item(chave_nota: str, codigo_produto_nota: str, descricao_nota: str,
     """
     with _conn() as con:
         with con.cursor() as cur:
-            cur.execute(sql, (chave_nota, codigo_produto_nota, descricao_nota,
-                              ncm, unidade, quantidade, valor_unitario, valor_total))
+            cur.execute(
+                sql,
+                (
+                    chave_nota,
+                    codigo_produto_nota,
+                    descricao_nota,
+                    ncm,
+                    unidade,
+                    quantidade,
+                    valor_unitario,
+                    valor_total,
+                ),
+            )
             return cur.fetchone()["id"]
 
 
@@ -215,7 +251,9 @@ def find_similar_aliases(descricao: str, limit: int = 5) -> list:
     return [(row, score) for score, row in scored[:limit]]
 
 
-def create_produto_canonico(nome: str, ncm: str = "", unidade_padrao: str = "", ean: str = None) -> int:
+def create_produto_canonico(
+    nome: str, ncm: str = "", unidade_padrao: str = "", ean: str = None
+) -> int:
     sql = """
         INSERT INTO produto_canonico (nome, ncm, unidade_padrao, ean)
         VALUES (%s, %s, %s, %s)
@@ -227,8 +265,13 @@ def create_produto_canonico(nome: str, ncm: str = "", unidade_padrao: str = "", 
             return cur.fetchone()["id"]
 
 
-def create_alias(id_produto_canonico: int, cnpj_emitente: str,
-                 codigo_produto_nota: str, descricao_nota: str, confirmado: bool = False) -> int:
+def create_alias(
+    id_produto_canonico: int,
+    cnpj_emitente: str,
+    codigo_produto_nota: str,
+    descricao_nota: str,
+    confirmado: bool = False,
+) -> int:
     sql = """
         INSERT INTO produto_alias
         (id_produto_canonico, cnpj_emitente, codigo_produto_nota, descricao_nota, confirmado)
@@ -237,8 +280,16 @@ def create_alias(id_produto_canonico: int, cnpj_emitente: str,
     """
     with _conn() as con:
         with con.cursor() as cur:
-            cur.execute(sql, (id_produto_canonico, cnpj_emitente,
-                              codigo_produto_nota, descricao_nota, confirmado))
+            cur.execute(
+                sql,
+                (
+                    id_produto_canonico,
+                    cnpj_emitente,
+                    codigo_produto_nota,
+                    descricao_nota,
+                    confirmado,
+                ),
+            )
             return cur.fetchone()["id"]
 
 
@@ -260,7 +311,9 @@ def get_unlinked_items() -> list:
 def nota_already_imported(chave: str) -> bool:
     with _conn() as con:
         with con.cursor() as cur:
-            cur.execute("SELECT COUNT(*) AS n FROM item WHERE chave_nota = %s", (chave,))
+            cur.execute(
+                "SELECT COUNT(*) AS n FROM item WHERE chave_nota = %s", (chave,)
+            )
             return cur.fetchone()["n"] > 0
 
 
@@ -302,11 +355,16 @@ def ingest_nota(emitente: dict, nota: dict, itens: list[dict]) -> int:
 
 # --- Compatibilidade com parsers existentes (Item dataclass) ---
 
+
 def insert_items(items) -> int:
     """Shim de compatibilidade: aceita lista de Item e chama ingest_nota."""
     from itertools import groupby
+
     inserted = 0
-    def key(i): return i.nfe_chave
+
+    def key(i):
+        return i.nfe_chave
+
     for chave, grupo in groupby(sorted(items, key=key), key=key):
         grupo = list(grupo)
         first = grupo[0]
