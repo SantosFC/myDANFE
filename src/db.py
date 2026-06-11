@@ -330,7 +330,20 @@ def query_all() -> list:
         with con.cursor() as cur:
             cur.execute(
                 """
-                SELECT i.*, n.data_emissao, n.cnpj_emitente, e.nome AS nome_emitente
+                SELECT
+                    i.id,
+                    i.chave_nota,
+                    i.codigo_produto_nota,
+                    i.descricao_nota,
+                    i.ncm,
+                    i.unidade,
+                    i.quantidade,
+                    i.valor_unitario,
+                    i.valor_total,
+                    n.data_emissao,
+                    n.cnpj_emitente,
+                    e.nome        AS nome_emitente,
+                    e.nome_fantasia
                 FROM item i
                 JOIN nota n ON n.chave = i.chave_nota
                 JOIN emitente e ON e.cnpj = n.cnpj_emitente
