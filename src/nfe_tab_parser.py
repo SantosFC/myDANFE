@@ -38,12 +38,18 @@ def _num(s: str) -> float:
 
 
 def _chave_para_campos(chave: str) -> dict:
-    """Extrai série e número diretamente dos 44 dígitos da chave."""
+    """Extrai série, número e data (AAMM) dos 44 dígitos da chave."""
     if len(chave) != 44:
-        return {"serie": "", "numero": ""}
+        return {"serie": "", "numero": "", "data_emissao": None}
     serie  = str(int(chave[22:25]))
     numero = str(int(chave[25:34]))
-    return {"serie": serie, "numero": numero}
+    ano = 2000 + int(chave[2:4])
+    mes = int(chave[4:6])
+    try:
+        data = date(ano, mes, 1)
+    except ValueError:
+        data = None
+    return {"serie": serie, "numero": numero, "data_emissao": data}
 
 
 def _detect_tab(text: str) -> str:
@@ -77,7 +83,7 @@ def _parse_aba_emitente(text: str, chave: str) -> dict:
         },
         "nota": {
             "chave":        chave,
-            "data_emissao": None,   # não disponível na aba Emitente
+            "data_emissao": campos_chave["data_emissao"],
             "numero":       campos_chave["numero"],
             "serie":        campos_chave["serie"],
             "valor_total":  None,
