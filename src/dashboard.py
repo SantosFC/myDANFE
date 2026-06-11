@@ -1,17 +1,20 @@
 """Painel Streamlit — inflação pessoal a partir de XMLs de NFe."""
 
+import sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 
-from .parser import parse_directory
-from .pdf_parser import parse_pdf_directory
-from .txt_parser import parse_txt_directory
-from .db import init_db, insert_items, query_all
-from .inflation import build_dataframe, inflacao_pessoal_mensal, preco_medio_mensal, top_produtos_por_gasto
-from .ipca import fetch_ipca
+from src.parser import parse_directory
+from src.pdf_parser import parse_pdf_directory
+from src.txt_parser import parse_txt_directory
+from src.db import init_db, insert_items, query_all
+from src.inflation import build_dataframe, inflacao_pessoal_mensal, preco_medio_mensal, top_produtos_por_gasto
+from src.ipca import fetch_ipca
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 XML_DIR = DATA_DIR / "xmls"
