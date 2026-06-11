@@ -5,3 +5,4 @@ data/xmls/
 .env
 backend/static/
 .coverage
+htmlcov/
