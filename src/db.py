@@ -360,3 +360,22 @@ def query_all() -> list:
                 """
             )
             return cur.fetchall()
+
+
+def get_unique_descriptions() -> list[str]:
+    with _conn() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                "SELECT DISTINCT descricao_nota FROM item ORDER BY descricao_nota"
+            )
+            return [r["descricao_nota"] for r in cur.fetchall() if r["descricao_nota"]]
+
+
+def rename_descricao(old: str, new: str) -> int:
+    with _conn() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                "UPDATE item SET descricao_nota = %s WHERE descricao_nota = %s",
+                (new, old),
+            )
+            return cur.rowcount
