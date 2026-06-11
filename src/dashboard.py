@@ -90,7 +90,8 @@ if pagina == "Importar Nota":
         st.divider()
         st.subheader("Preview")
 
-        if nota_already_imported(n["chave"]):
+        ja_importada = nota_already_imported(n["chave"])
+        if ja_importada:
             st.warning("Esta nota já foi importada anteriormente.")
 
         c1, c2, c3, c4 = st.columns(4)
@@ -115,7 +116,7 @@ if pagina == "Importar Nota":
         total = sum(i.valor_total for i in itens)
         st.markdown(f"**Total dos itens: R$ {total:.2f}**")
 
-        if st.button("Confirmar e Salvar", type="primary"):
+        if st.button("Confirmar e Salvar", type="primary", disabled=ja_importada):
             try:
                 itens_dict = [
                     {
