@@ -185,12 +185,15 @@ else:
         produto_sel = st.selectbox("Selecione o produto", produtos)
         if produto_sel:
             hist = preco_medio_mensal(df, produto_sel)
-            if len(hist) >= 2:
-                var_total = ((hist["preco_medio"].iloc[-1] / hist["preco_medio"].iloc[0]) - 1) * 100
-                st.caption(f"Variação acumulada no período: **{var_total:+.1f}%**")
-            fig3 = px.line(hist, x="ano_mes_str", y="preco_medio", markers=True,
-                           labels={"ano_mes_str": "Mês", "preco_medio": "Preço médio (R$)"}, height=380)
-            st.plotly_chart(fig3, use_container_width=True)
+            if hist.empty:
+                st.info("Sem dados suficientes para este produto.")
+            else:
+                if len(hist) >= 2:
+                    var_total = ((hist["preco_medio"].iloc[-1] / hist["preco_medio"].iloc[0]) - 1) * 100
+                    st.caption(f"Variação acumulada no período: **{var_total:+.1f}%**")
+                fig3 = px.line(hist, x="ano_mes_str", y="preco_medio", markers=True,
+                               labels={"ano_mes_str": "Mês", "preco_medio": "Preço médio (R$)"}, height=380)
+                st.plotly_chart(fig3, use_container_width=True)
 
     st.divider()
 
