@@ -1,6 +1,6 @@
 """Parse XMLs de NFe e extrai itens de compra."""
 
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path

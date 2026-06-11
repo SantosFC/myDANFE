@@ -41,9 +41,7 @@ RE_CHAVE_RESUMO = re.compile(r"Chave de acesso:\s*\n?((?:\d{4}\s*){11})")
 # --- Layout 2: Consulta Completa ---
 # Chave no formato: 35-2606-07.985.900/0004-27-65-001-000.236.945-130.829.096-5
 # A linha seguinte ao cabeçalho "Chave de acesso ... Versão XML"
-RE_CHAVE_COMPLETA = re.compile(
-    r"Chave de acesso\b.*?\n([\d\-./]+)\s"
-)
+RE_CHAVE_COMPLETA = re.compile(r"Chave de acesso\b.*?\n([\d\-./]+)\s")
 RE_DATA_HORA = re.compile(r"Data/Hora:\s*(\d{2}/\d{2}/\d{4})")
 # Linha de item: "1 DESCRICAO 0,4300 Kg 59,250"
 RE_ITEM_LINHA = re.compile(
