@@ -19,16 +19,17 @@ from src.ipca import fetch_ipca
 st.set_page_config(page_title="Inflação Pessoal", layout="wide")
 st.title("myDANFE — Inflação Pessoal")
 
-# --- Carregar dados ---
-try:
-    init_db()
-except Exception as exc:
-    st.error(
-        f"Erro ao conectar ao banco: {exc}\n\n"
-        "Verifique as variáveis DANFE_DB_HOST, DANFE_DB_USER, "
-        "DANFE_DB_PASSWORD e DANFE_DB_NAME."
-    )
-    st.stop()
+# --- Conectar ao banco ---
+with st.spinner("Conectando ao banco de dados..."):
+    try:
+        init_db()
+    except Exception as exc:
+        st.error(
+            f"Erro ao conectar ao banco: {exc}\n\n"
+            "Verifique as variáveis DANFE_DB_HOST, DANFE_DB_USER, "
+            "DANFE_DB_PASSWORD e DANFE_DB_NAME."
+        )
+        st.stop()
 
 # --- Navegação ---
 pagina = st.sidebar.radio("Menu", ["Painel", "Importar Nota", "Produtos"])
@@ -64,21 +65,23 @@ if pagina == "Importar Nota":
         )
 
     if st.button("Processar", type="primary", disabled=not (texto_nfe and texto_prod)):
-        try:
-            cabecalho = parse_nfe_tab(texto_nfe)
+        with st.spinner("Processando nota..."):
+            try:
+                cabecalho = parse_nfe_tab(texto_nfe)
 
-            with tempfile.NamedTemporaryFile(suffix=".txt", mode="w", encoding="utf-8", delete=False) as f:
-                f.write(texto_prod)
-                tmp = Path(f.name)
-            itens = parse_txt(tmp)
-            tmp.unlink()
+                with tempfile.NamedTemporaryFile(suffix=".txt", mode="w", encoding="utf-8", delete=False) as f:
+                    f.write(texto_prod)
+                    tmp = Path(f.name)
+                itens = parse_txt(tmp)
+                tmp.unlink()
 
-            st.session_state["preview_cab"]  = cabecalho
-            st.session_state["preview_itens"] = itens
-            st.session_state["importado"] = False
+                st.session_state["preview_cab"]   = cabecalho
+                st.session_state["preview_itens"] = itens
+                st.session_state["importado"]     = False
+                st.toast(f"Nota lida com sucesso — {len(itens)} itens encontrados.", icon="✅")
 
-        except Exception as exc:
-            st.error(f"Erro ao processar: {exc}")
+            except Exception as exc:
+                st.error(f"Erro ao processar: {exc}")
 
     # --- Preview ---
     if "preview_cab" in st.session_state and not st.session_state.get("importado"):
@@ -92,7 +95,9 @@ if pagina == "Importar Nota":
 
         ja_importada = nota_already_imported(n["chave"])
         if ja_importada:
-            st.warning("Esta nota já foi importada anteriormente.")
+            st.warning("⚠️ Esta nota já foi importada anteriormente. Não é possível importar novamente.")
+        else:
+            st.info(f"📋 {len(itens)} itens prontos para importação. Confira os dados abaixo e clique em **Confirmar e Salvar**.")
 
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Emitente", e["nome_fantasia"] or e["nome"])
@@ -117,55 +122,62 @@ if pagina == "Importar Nota":
         st.markdown(f"**Total dos itens: R$ {total:.2f}**")
 
         if st.button("Confirmar e Salvar", type="primary", disabled=ja_importada):
-            try:
-                itens_dict = [
-                    {
-                        "codigo_produto": i.codigo_produto,
-                        "descricao":      i.descricao,
-                        "ncm":            i.ncm,
-                        "unidade":        i.unidade,
-                        "quantidade":     i.quantidade,
-                        "valor_unitario": i.valor_unitario,
-                        "valor_total":    i.valor_total,
-                        "ean":            i.ean,
-                    }
-                    for i in itens
-                ]
-                ingest_nota(e, n, itens_dict)
-                st.session_state["importado"] = True
-                st.success(f"Nota importada com sucesso! {len(itens)} itens salvos.")
-                st.balloons()
-            except Exception as exc:
-                st.error(f"Erro ao salvar: {exc}")
+            with st.spinner("Salvando nota no banco de dados..."):
+                try:
+                    itens_dict = [
+                        {
+                            "codigo_produto": i.codigo_produto,
+                            "descricao":      i.descricao,
+                            "ncm":            i.ncm,
+                            "unidade":        i.unidade,
+                            "quantidade":     i.quantidade,
+                            "valor_unitario": i.valor_unitario,
+                            "valor_total":    i.valor_total,
+                            "ean":            i.ean,
+                        }
+                        for i in itens
+                    ]
+                    ingest_nota(e, n, itens_dict)
+                    st.session_state["importado"] = True
+                    st.success(f"✅ Nota importada com sucesso! {len(itens)} itens salvos.")
+                    st.balloons()
+                except Exception as exc:
+                    st.error(f"Erro ao salvar: {exc}")
 
 # ════════════════════════════════════════════════════════
 # PÁGINA: PRODUTOS
 # ════════════════════════════════════════════════════════
 elif pagina == "Produtos":
     st.header("Editar Descrição de Produtos")
+    st.caption("Selecione um produto pelo nome original da nota e defina um nome mais legível. A alteração se aplica a todos os registros com essa descrição.")
 
-    descricoes = get_unique_descriptions()
+    with st.spinner("Carregando produtos..."):
+        descricoes = get_unique_descriptions()
+
     if not descricoes:
         st.info("Nenhum produto cadastrado ainda.")
         st.stop()
 
+    st.caption(f"{len(descricoes)} produto(s) cadastrado(s).")
     selecionado = st.selectbox("Selecione o produto", descricoes)
 
     novo_nome = st.text_input("Nova descrição", value=selecionado)
 
-    if st.button("Salvar", type="primary", disabled=(novo_nome.strip() == selecionado)):
-        if not novo_nome.strip():
-            st.error("A descrição não pode ficar vazia.")
-        else:
+    if novo_nome.strip() and novo_nome.strip() != selecionado:
+        st.caption(f"Renomear **\"{selecionado}\"** → **\"{novo_nome.strip()}\"**")
+
+    if st.button("Salvar", type="primary", disabled=(novo_nome.strip() == selecionado or not novo_nome.strip())):
+        with st.spinner("Atualizando..."):
             n = rename_descricao(selecionado, novo_nome.strip())
-            st.success(f"{n} item(s) atualizado(s).")
-            st.rerun()
+        st.success(f"✅ {n} item(s) renomeado(s) com sucesso.")
+        st.rerun()
 
 # ════════════════════════════════════════════════════════
 # PÁGINA: PAINEL
 # ════════════════════════════════════════════════════════
 else:
-    rows = query_all()
+    with st.spinner("Carregando dados..."):
+        rows = query_all()
 
     if not rows:
         st.info("Nenhum dado ainda. Vá em **Importar Nota** para adicionar sua primeira nota.")
@@ -183,16 +195,23 @@ else:
 
     st.subheader("Variação mensal — sua cesta vs IPCA")
     infl = inflacao_pessoal_mensal(df).dropna(subset=["variacao_pct"])
-    ipca_dict = fetch_ipca()
 
-    fig = go.Figure()
-    fig.add_bar(x=infl["ano_mes_str"], y=infl["variacao_pct"], name="Minha cesta", marker_color="#2196F3")
-    if ipca_dict:
-        meses = infl["ano_mes_str"].tolist()
-        ipca_vals = [ipca_dict.get(m) for m in meses]
-        fig.add_scatter(x=meses, y=ipca_vals, mode="lines+markers", name="IPCA oficial", line=dict(color="#FF5722", width=2))
-    fig.update_layout(yaxis_title="Variação (%)", xaxis_title="Mês", legend=dict(orientation="h"), height=400)
-    st.plotly_chart(fig, use_container_width=True)
+    if infl.empty:
+        st.info("Dados insuficientes para calcular variação mensal. Importe notas de pelo menos 2 meses diferentes.")
+    else:
+        with st.spinner("Buscando IPCA..."):
+            ipca_dict = fetch_ipca()
+
+        fig = go.Figure()
+        fig.add_bar(x=infl["ano_mes_str"], y=infl["variacao_pct"], name="Minha cesta", marker_color="#2196F3")
+        if ipca_dict:
+            meses = infl["ano_mes_str"].tolist()
+            ipca_vals = [ipca_dict.get(m) for m in meses]
+            fig.add_scatter(x=meses, y=ipca_vals, mode="lines+markers", name="IPCA oficial", line=dict(color="#FF5722", width=2))
+        elif infl is not None:
+            st.caption("⚠️ Não foi possível buscar o IPCA oficial no momento.")
+        fig.update_layout(yaxis_title="Variação (%)", xaxis_title="Mês", legend=dict(orientation="h"), height=400)
+        st.plotly_chart(fig, use_container_width=True)
 
     st.divider()
 
