@@ -9,7 +9,7 @@ A chave de acesso está no cabeçalho das duas abas.
 """
 
 import re
-from datetime import date, datetime
+from datetime import date
 
 
 RE_CHAVE = re.compile(r"Chave de acesso\b[^\n]*\n([\d\-./]+)\s")
