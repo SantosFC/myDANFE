@@ -1,6 +1,5 @@
 """Lógica de vinculação de itens a produto_canonico."""
 
-import difflib
 
 
 def link_item(item: dict) -> dict:

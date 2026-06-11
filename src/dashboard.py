@@ -14,7 +14,7 @@ import pandas as pd
 from src.nfe_tab_parser import parse_nfe_tab
 from src.txt_parser import parse_txt, RE_CHAVE as RE_CHAVE_PROD
 from src.nfe_tab_parser import RE_CHAVE as RE_CHAVE_NFE
-from src.db import init_db, insert_items, ingest_nota, query_all, nota_already_imported, get_unique_descriptions, rename_descricao
+from src.db import init_db, ingest_nota, query_all, nota_already_imported, get_unique_descriptions, rename_descricao
 from src.inflation import build_dataframe, inflacao_pessoal_mensal, preco_medio_mensal, top_produtos_por_gasto
 from src.ipca import fetch_ipca
 

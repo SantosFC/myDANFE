@@ -286,7 +286,7 @@ def ingest_nota(emitente: dict, nota: dict, itens: list[dict]) -> int:
     )
     count = 0
     for it in itens:
-        item_id = insert_item(
+        insert_item(
             chave_nota=nota["chave"],
             codigo_produto_nota=it.get("codigo_produto", ""),
             descricao_nota=it.get("descricao", ""),
@@ -306,7 +306,7 @@ def insert_items(items) -> int:
     """Shim de compatibilidade: aceita lista de Item e chama ingest_nota."""
     from itertools import groupby
     inserted = 0
-    key = lambda i: i.nfe_chave
+    def key(i): return i.nfe_chave
     for chave, grupo in groupby(sorted(items, key=key), key=key):
         grupo = list(grupo)
         first = grupo[0]
