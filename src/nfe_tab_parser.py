@@ -9,28 +9,28 @@ A chave de acesso está no cabeçalho das duas abas.
 """
 
 import re
-from datetime import date, datetime
+from datetime import date
 
 
 RE_CHAVE = re.compile(r"Chave de acesso\b[^\n]*\n([\d\-./]+)\s")
 
 # --- Aba NFe ---
 RE_DATA_EMISSAO = re.compile(r"Data de Emiss[ãa]o\s*\n([\d/]+)")
-RE_NUMERO       = re.compile(r"\bN[úu]mero\s*\n(\d+)")
-RE_SERIE        = re.compile(r"\bS[ée]rie\s*\n(\d+)")
-RE_VALOR_TOTAL  = re.compile(r"Valor Total da Nota Fiscal\s*\n([\d.,]+)")
+RE_NUMERO = re.compile(r"\bN[úu]mero\s*\n(\d+)")
+RE_SERIE = re.compile(r"\bS[ée]rie\s*\n(\d+)")
+RE_VALOR_TOTAL = re.compile(r"Valor Total da Nota Fiscal\s*\n([\d.,]+)")
 RE_EMITENTE_NFE = re.compile(
     r"Emitente\s*\nCNPJ\s*\n([\d./\-]+).*?Nome / Razão Social\s*\n(.+?)\s*\t.*?UF\s*\n([A-Z]{2})",
     re.DOTALL,
 )
 
 # --- Aba Emitente ---
-RE_NOME_EMIT    = re.compile(r"Nome / Razão Social\s*\n(.+?)\s*\t")
+RE_NOME_EMIT = re.compile(r"Nome / Razão Social\s*\n(.+?)\s*\t")
 RE_NOME_FANTASIA = re.compile(r"Nome Fantasia\s*\n(.+?)\n")
-RE_CNPJ_EMIT    = re.compile(r"CNPJ\s*\n([\d./\-]+)\s*\t")
-RE_LOGRADOURO   = re.compile(r"Endere[çc]o\s*\n(.+?)\n")
-RE_MUNICIPIO    = re.compile(r"Munic[íi]pio\s*\n\d+ - (.+?)\s*\t")
-RE_UF_EMIT      = re.compile(r"\bUF\s*\n([A-Z]{2})\s*\t")
+RE_CNPJ_EMIT = re.compile(r"CNPJ\s*\n([\d./\-]+)\s*\t")
+RE_LOGRADOURO = re.compile(r"Endere[çc]o\s*\n(.+?)\n")
+RE_MUNICIPIO = re.compile(r"Munic[íi]pio\s*\n\d+ - (.+?)\s*\t")
+RE_UF_EMIT = re.compile(r"\bUF\s*\n([A-Z]{2})\s*\t")
 
 
 def _num(s: str) -> float:
@@ -41,7 +41,7 @@ def _chave_para_campos(chave: str) -> dict:
     """Extrai série, número e data (AAMM) dos 44 dígitos da chave."""
     if len(chave) != 44:
         return {"serie": "", "numero": "", "data_emissao": None}
-    serie  = str(int(chave[22:25]))
+    serie = str(int(chave[22:25]))
     numero = str(int(chave[25:34]))
     ano = 2000 + int(chave[2:4])
     mes = int(chave[4:6])
@@ -59,12 +59,12 @@ def _detect_tab(text: str) -> str:
 
 
 def _parse_aba_emitente(text: str, chave: str) -> dict:
-    m_nome    = RE_NOME_EMIT.search(text)
+    m_nome = RE_NOME_EMIT.search(text)
     m_fantasia = RE_NOME_FANTASIA.search(text)
-    m_cnpj    = RE_CNPJ_EMIT.search(text)
-    m_uf      = RE_UF_EMIT.search(text)
-    m_log     = RE_LOGRADOURO.search(text)
-    m_mun     = RE_MUNICIPIO.search(text)
+    m_cnpj = RE_CNPJ_EMIT.search(text)
+    m_uf = RE_UF_EMIT.search(text)
+    m_log = RE_LOGRADOURO.search(text)
+    m_mun = RE_MUNICIPIO.search(text)
 
     if not m_cnpj or not m_nome:
         raise ValueError("CNPJ ou Nome do emitente não encontrados na aba Emitente.")
@@ -74,19 +74,19 @@ def _parse_aba_emitente(text: str, chave: str) -> dict:
 
     return {
         "emitente": {
-            "cnpj":          cnpj,
-            "nome":          m_nome.group(1).strip(),
+            "cnpj": cnpj,
+            "nome": m_nome.group(1).strip(),
             "nome_fantasia": m_fantasia.group(1).strip() if m_fantasia else "",
-            "uf":            m_uf.group(1).strip() if m_uf else "",
-            "logradouro":    m_log.group(1).strip() if m_log else "",
-            "municipio":     m_mun.group(1).strip() if m_mun else "",
+            "uf": m_uf.group(1).strip() if m_uf else "",
+            "logradouro": m_log.group(1).strip() if m_log else "",
+            "municipio": m_mun.group(1).strip() if m_mun else "",
         },
         "nota": {
-            "chave":        chave,
+            "chave": chave,
             "data_emissao": campos_chave["data_emissao"],
-            "numero":       campos_chave["numero"],
-            "serie":        campos_chave["serie"],
-            "valor_total":  None,
+            "numero": campos_chave["numero"],
+            "serie": campos_chave["serie"],
+            "valor_total": None,
         },
     }
 
@@ -107,19 +107,19 @@ def _parse_aba_nfe(text: str, chave: str) -> dict:
 
     return {
         "emitente": {
-            "cnpj":          re.sub(r"\D", "", m_emit.group(1)),
-            "nome":          m_emit.group(2).strip(),
+            "cnpj": re.sub(r"\D", "", m_emit.group(1)),
+            "nome": m_emit.group(2).strip(),
             "nome_fantasia": "",
-            "uf":            m_emit.group(3).strip(),
-            "logradouro":    "",
-            "municipio":     "",
+            "uf": m_emit.group(3).strip(),
+            "logradouro": "",
+            "municipio": "",
         },
         "nota": {
-            "chave":        chave,
+            "chave": chave,
             "data_emissao": data_emissao,
-            "numero":       m_num.group(1) if m_num else "",
-            "serie":        m_ser.group(1) if m_ser else "",
-            "valor_total":  _num(m_val.group(1)) if m_val else None,
+            "numero": m_num.group(1) if m_num else "",
+            "serie": m_ser.group(1) if m_ser else "",
+            "valor_total": _num(m_val.group(1)) if m_val else None,
         },
     }
 

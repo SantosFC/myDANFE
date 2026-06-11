@@ -1,7 +1,5 @@
 """Lógica de vinculação de itens a produto_canonico."""
 
-import difflib
-
 
 def link_item(item: dict) -> dict:
     """
@@ -46,11 +44,14 @@ def link_item(item: dict) -> dict:
     suggestions = []
     for alias_row, score in similares:
         if score > 0.6:
-            suggestions.append({
-                "id": alias_row["id_produto_canonico"],
-                "nome": alias_row.get("pc_nome") or alias_row.get("descricao_nota", ""),
-                "score": round(score, 4),
-            })
+            suggestions.append(
+                {
+                    "id": alias_row["id_produto_canonico"],
+                    "nome": alias_row.get("pc_nome")
+                    or alias_row.get("descricao_nota", ""),
+                    "score": round(score, 4),
+                }
+            )
 
     if suggestions:
         return {

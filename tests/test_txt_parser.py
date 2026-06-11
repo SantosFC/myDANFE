@@ -21,7 +21,9 @@ SAMPLE = (
 
 
 def test_parse_txt():
-    with tempfile.NamedTemporaryFile(suffix=".txt", mode="w", encoding="utf-8", delete=False) as f:
+    with tempfile.NamedTemporaryFile(
+        suffix=".txt", mode="w", encoding="utf-8", delete=False
+    ) as f:
         f.write(SAMPLE)
         tmp = Path(f.name)
     try:
