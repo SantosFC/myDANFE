@@ -12,7 +12,7 @@ import pandas as pd
 
 from src.nfe_tab_parser import parse_nfe_tab
 from src.txt_parser import parse_txt
-from src.db import init_db, insert_items, ingest_nota, query_all
+from src.db import init_db, insert_items, ingest_nota, query_all, nota_already_imported
 from src.inflation import build_dataframe, inflacao_pessoal_mensal, preco_medio_mensal, top_produtos_por_gasto
 from src.ipca import fetch_ipca
 
@@ -46,9 +46,9 @@ if pagina == "Importar Nota":
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("1. Aba NFe ou Emitente")
+        st.subheader("1. Aba NFe")
         texto_nfe = st.text_area(
-            "Cole aqui o texto da aba NFe ou Emitente",
+            "Cole aqui o texto da aba NFe",
             height=300,
             placeholder="Nota Fiscal de Consumidor Eletrônica\n\nChave de acesso ...",
             label_visibility="collapsed",
@@ -89,6 +89,9 @@ if pagina == "Importar Nota":
 
         st.divider()
         st.subheader("Preview")
+
+        if nota_already_imported(n["chave"]):
+            st.warning("Esta nota já foi importada anteriormente.")
 
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Emitente", e["nome_fantasia"] or e["nome"])

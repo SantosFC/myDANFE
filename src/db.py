@@ -122,10 +122,10 @@ def upsert_emitente(cnpj: str, nome: str, nome_fantasia: str = "",
         INSERT INTO emitente (cnpj, nome, nome_fantasia, logradouro, municipio, uf)
         VALUES (%s, %s, %s, %s, %s, %s)
         ON CONFLICT (cnpj) DO UPDATE SET
-            nome_fantasia = EXCLUDED.nome_fantasia,
-            logradouro    = EXCLUDED.logradouro,
-            municipio     = EXCLUDED.municipio,
-            uf            = EXCLUDED.uf
+            nome_fantasia = CASE WHEN EXCLUDED.nome_fantasia <> '' THEN EXCLUDED.nome_fantasia ELSE emitente.nome_fantasia END,
+            logradouro    = CASE WHEN EXCLUDED.logradouro    <> '' THEN EXCLUDED.logradouro    ELSE emitente.logradouro    END,
+            municipio     = CASE WHEN EXCLUDED.municipio     <> '' THEN EXCLUDED.municipio     ELSE emitente.municipio     END,
+            uf            = CASE WHEN EXCLUDED.uf            <> '' THEN EXCLUDED.uf            ELSE emitente.uf            END
     """
     with _conn() as con:
         with con.cursor() as cur:
@@ -257,8 +257,17 @@ def get_unlinked_items() -> list:
             return cur.fetchall()
 
 
+def nota_already_imported(chave: str) -> bool:
+    with _conn() as con:
+        with con.cursor() as cur:
+            cur.execute("SELECT COUNT(*) AS n FROM item WHERE chave_nota = %s", (chave,))
+            return cur.fetchone()["n"] > 0
+
+
 def ingest_nota(emitente: dict, nota: dict, itens: list[dict]) -> int:
     """Orquestra a ingestão completa de uma nota. Retorna itens inseridos."""
+    if nota_already_imported(nota["chave"]):
+        raise ValueError("Nota já importada anteriormente.")
     upsert_emitente(
         cnpj=emitente["cnpj"],
         nome=emitente.get("nome", ""),
