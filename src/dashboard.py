@@ -12,7 +12,7 @@ import pandas as pd
 
 from src.nfe_tab_parser import parse_nfe_tab
 from src.txt_parser import parse_txt
-from src.db import init_db, insert_items, ingest_nota, query_all, nota_already_imported
+from src.db import init_db, insert_items, ingest_nota, query_all, nota_already_imported, get_unique_descriptions, rename_descricao
 from src.inflation import build_dataframe, inflacao_pessoal_mensal, preco_medio_mensal, top_produtos_por_gasto
 from src.ipca import fetch_ipca
 
@@ -31,7 +31,7 @@ except Exception as exc:
     st.stop()
 
 # --- Navegação ---
-pagina = st.sidebar.radio("Menu", ["Painel", "Importar Nota"])
+pagina = st.sidebar.radio("Menu", ["Painel", "Importar Nota", "Produtos"])
 
 # ════════════════════════════════════════════════════════
 # PÁGINA: IMPORTAR NOTA
@@ -137,6 +137,29 @@ if pagina == "Importar Nota":
                 st.balloons()
             except Exception as exc:
                 st.error(f"Erro ao salvar: {exc}")
+
+# ════════════════════════════════════════════════════════
+# PÁGINA: PRODUTOS
+# ════════════════════════════════════════════════════════
+elif pagina == "Produtos":
+    st.header("Editar Descrição de Produtos")
+
+    descricoes = get_unique_descriptions()
+    if not descricoes:
+        st.info("Nenhum produto cadastrado ainda.")
+        st.stop()
+
+    selecionado = st.selectbox("Selecione o produto", descricoes)
+
+    novo_nome = st.text_input("Nova descrição", value=selecionado)
+
+    if st.button("Salvar", type="primary", disabled=(novo_nome.strip() == selecionado)):
+        if not novo_nome.strip():
+            st.error("A descrição não pode ficar vazia.")
+        else:
+            n = rename_descricao(selecionado, novo_nome.strip())
+            st.success(f"{n} item(s) atualizado(s).")
+            st.rerun()
 
 # ════════════════════════════════════════════════════════
 # PÁGINA: PAINEL
