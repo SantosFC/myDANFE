@@ -22,13 +22,22 @@ except ImportError:
     pass
 
 
+def _get(key: str, default: str = "") -> str:
+    """Lê configuração do st.secrets (Streamlit Cloud) ou os.environ (local)."""
+    try:
+        import streamlit as st
+        return st.secrets.get(key, os.environ.get(key, default))
+    except Exception:
+        return os.environ.get(key, default)
+
+
 def _config() -> dict:
     return {
-        "host":     os.environ.get("DANFE_DB_HOST", "localhost"),
-        "port":     int(os.environ.get("DANFE_DB_PORT", "5432")),
-        "user":     os.environ.get("DANFE_DB_USER", "postgres"),
-        "password": os.environ.get("DANFE_DB_PASSWORD", ""),
-        "dbname":   os.environ.get("DANFE_DB_NAME", "postgres"),
+        "host":     _get("DANFE_DB_HOST", "localhost"),
+        "port":     int(_get("DANFE_DB_PORT", "5432")),
+        "user":     _get("DANFE_DB_USER", "postgres"),
+        "password": _get("DANFE_DB_PASSWORD", ""),
+        "dbname":   _get("DANFE_DB_NAME", "postgres"),
     }
 
 

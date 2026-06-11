@@ -4,23 +4,20 @@ import pandas as pd
 
 
 def build_dataframe(rows) -> pd.DataFrame:
-    cols = [
-        "id", "nfe_chave", "data_emissao", "cnpj_emitente", "nome_emitente",
-        "codigo_produto", "descricao", "ncm", "unidade",
-        "quantidade", "valor_unitario", "valor_total",
-    ]
-    df = pd.DataFrame([dict(r) for r in rows], columns=cols)
-    # MariaDB retorna DECIMAL como decimal.Decimal — converte para float
+    df = pd.DataFrame([dict(r) for r in rows])
+    if df.empty:
+        return df
     for col in ("quantidade", "valor_unitario", "valor_total"):
-        df[col] = df[col].astype(float)
+        if col in df.columns:
+            df[col] = df[col].astype(float)
     df["data_emissao"] = pd.to_datetime(df["data_emissao"])
     df["ano_mes"] = df["data_emissao"].dt.to_period("M")
     return df
 
 
 def preco_medio_mensal(df: pd.DataFrame, descricao: str) -> pd.DataFrame:
-    """Preço médio ponderado por quantidade para um produto, mês a mês."""
-    prod = df[df["descricao"].str.upper() == descricao.upper()].copy()
+    col = "descricao_nota" if "descricao_nota" in df.columns else "descricao"
+    prod = df[df[col].str.upper() == descricao.upper()].copy()
     agg = (
         prod.groupby("ano_mes")
         .apply(
@@ -35,19 +32,11 @@ def preco_medio_mensal(df: pd.DataFrame, descricao: str) -> pd.DataFrame:
 
 
 def inflacao_pessoal_mensal(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Variação percentual mês a mês do gasto total ponderado pela
-    mesma cesta de produtos (itens presentes em pelo menos 2 meses).
-    """
-    monthly = (
-        df.groupby(["ano_mes", "descricao"])["valor_total"]
-        .sum()
-        .reset_index()
-    )
-    # mantém apenas produtos com presenças em múltiplos meses
-    counts = monthly.groupby("descricao")["ano_mes"].nunique()
+    col = "descricao_nota" if "descricao_nota" in df.columns else "descricao"
+    monthly = df.groupby(["ano_mes", col])["valor_total"].sum().reset_index()
+    counts = monthly.groupby(col)["ano_mes"].nunique()
     recorrentes = counts[counts >= 2].index
-    basket = monthly[monthly["descricao"].isin(recorrentes)]
+    basket = monthly[monthly[col].isin(recorrentes)]
 
     gasto_mensal = basket.groupby("ano_mes")["valor_total"].sum().reset_index()
     gasto_mensal = gasto_mensal.sort_values("ano_mes")
@@ -57,8 +46,9 @@ def inflacao_pessoal_mensal(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def top_produtos_por_gasto(df: pd.DataFrame, n: int = 15) -> pd.DataFrame:
+    col = "descricao_nota" if "descricao_nota" in df.columns else "descricao"
     return (
-        df.groupby("descricao")["valor_total"]
+        df.groupby(col)["valor_total"]
         .sum()
         .nlargest(n)
         .reset_index()
