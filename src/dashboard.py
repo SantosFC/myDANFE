@@ -1,5 +1,6 @@
 """Painel Streamlit — inflação pessoal a partir de XMLs de NFe."""
 
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -11,7 +12,8 @@ import plotly.graph_objects as go
 import pandas as pd
 
 from src.nfe_tab_parser import parse_nfe_tab
-from src.txt_parser import parse_txt
+from src.txt_parser import parse_txt, RE_CHAVE as RE_CHAVE_PROD
+from src.nfe_tab_parser import RE_CHAVE as RE_CHAVE_NFE
 from src.db import init_db, insert_items, ingest_nota, query_all, nota_already_imported, get_unique_descriptions, rename_descricao
 from src.inflation import build_dataframe, inflacao_pessoal_mensal, preco_medio_mensal, top_produtos_por_gasto
 from src.ipca import fetch_ipca
@@ -64,6 +66,21 @@ if pagina == "Importar Nota":
             label_visibility="collapsed",
         )
 
+    # --- Validação de chaves em tempo real ---
+    chave_nfe  = re.sub(r"\D", "", m.group(1)) if (m := RE_CHAVE_NFE.search(texto_nfe  or "")) else None
+    chave_prod = re.sub(r"\D", "", m.group(1)) if (m := RE_CHAVE_PROD.search(texto_prod or "")) else None
+
+    if chave_nfe and chave_prod:
+        if chave_nfe == chave_prod:
+            st.success(f"✅ Chaves conferem — `{chave_nfe[:10]}...{chave_nfe[-6:]}`")
+        else:
+            st.error("❌ As chaves dos dois campos **não coincidem**. Verifique se colou abas da mesma nota.")
+    elif chave_nfe:
+        st.caption(f"🔑 Chave identificada no campo 1: `{chave_nfe[:10]}...{chave_nfe[-6:]}`")
+    elif chave_prod:
+        st.caption(f"🔑 Chave identificada no campo 2: `{chave_prod[:10]}...{chave_prod[-6:]}`")
+
+    chaves_ok = chave_nfe and chave_prod and chave_nfe == chave_prod
     if st.button("Processar", type="primary", disabled=not (texto_nfe and texto_prod)):
         with st.spinner("Processando nota..."):
             try:
