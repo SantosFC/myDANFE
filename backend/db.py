@@ -149,7 +149,9 @@ def upsert_nota(
     """
     with _conn() as con:
         with con.cursor() as cur:
-            cur.execute(sql, (chave, cnpj_emitente, data_emissao, numero, serie, valor_total))
+            cur.execute(
+                sql, (chave, cnpj_emitente, data_emissao, numero, serie, valor_total)
+            )
 
 
 def insert_item(
@@ -189,7 +191,9 @@ def insert_item(
 def nota_already_imported(chave: str) -> bool:
     with _conn() as con:
         with con.cursor() as cur:
-            cur.execute("SELECT COUNT(*) AS n FROM item WHERE chave_nota = %s", (chave,))
+            cur.execute(
+                "SELECT COUNT(*) AS n FROM item WHERE chave_nota = %s", (chave,)
+            )
             return cur.fetchone()["n"] > 0
 
 
@@ -250,7 +254,9 @@ def query_all() -> list:
 def get_unique_descriptions() -> list[str]:
     with _conn() as con:
         with con.cursor() as cur:
-            cur.execute("SELECT DISTINCT descricao_nota FROM item ORDER BY descricao_nota")
+            cur.execute(
+                "SELECT DISTINCT descricao_nota FROM item ORDER BY descricao_nota"
+            )
             return [r["descricao_nota"] for r in cur.fetchall() if r["descricao_nota"]]
 
 

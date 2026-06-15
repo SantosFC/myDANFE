@@ -47,7 +47,10 @@ def processar(req: ParseRequest):
 
     return {
         "emitente": e,
-        "nota": {**n, "data_emissao": str(n["data_emissao"]) if n["data_emissao"] else None},
+        "nota": {
+            **n,
+            "data_emissao": str(n["data_emissao"]) if n["data_emissao"] else None,
+        },
         "itens": [
             {
                 "descricao": i.descricao,

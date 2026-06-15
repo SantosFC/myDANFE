@@ -23,7 +23,12 @@ def _rows_to_df():
 def resumo():
     df = _rows_to_df()
     if df is None:
-        return {"total_compras": 0, "produtos_unicos": 0, "estabelecimentos": 0, "gasto_total": 0}
+        return {
+            "total_compras": 0,
+            "produtos_unicos": 0,
+            "estabelecimentos": 0,
+            "gasto_total": 0,
+        }
     return {
         "total_compras": len(df),
         "produtos_unicos": int(df["descricao_nota"].nunique()),
@@ -70,12 +75,14 @@ def registros():
     rows = query_all()
     result = []
     for r in rows:
-        result.append({
-            "data_emissao": str(r["data_emissao"]) if r["data_emissao"] else None,
-            "nome_emitente": r["nome_emitente"],
-            "descricao_nota": r["descricao_nota"],
-            "quantidade": float(r["quantidade"] or 0),
-            "valor_unitario": float(r["valor_unitario"] or 0),
-            "valor_total": float(r["valor_total"] or 0),
-        })
+        result.append(
+            {
+                "data_emissao": str(r["data_emissao"]) if r["data_emissao"] else None,
+                "nome_emitente": r["nome_emitente"],
+                "descricao_nota": r["descricao_nota"],
+                "quantidade": float(r["quantidade"] or 0),
+                "valor_unitario": float(r["valor_unitario"] or 0),
+                "valor_total": float(r["valor_total"] or 0),
+            }
+        )
     return result
