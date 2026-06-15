@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.pdf_parser import (
+from backend.parsers.pdf_parser import (
     RE_ITEM_RESUMO as RE_ITEM,
     RE_CHAVE_RESUMO as RE_CHAVE,
     RE_EMISSAO_RESUMO as RE_EMISSAO,

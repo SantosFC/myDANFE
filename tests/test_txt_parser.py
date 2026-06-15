@@ -1,9 +1,11 @@
 """Testes do parser de texto copiado da Consulta Completa NFC-e."""
 
-import pytest
 import tempfile
 from pathlib import Path
-from src.txt_parser import parse_txt
+
+import pytest
+
+from backend.parsers.txt_parser import parse_txt
 
 SAMPLE = (
     "Chave de acesso \tNúmero NFC-e \tVersão XML\n"
