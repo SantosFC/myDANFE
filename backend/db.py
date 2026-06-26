@@ -197,6 +197,29 @@ def nota_already_imported(chave: str) -> bool:
             return cur.fetchone()["n"] > 0
 
 
+def nota_exists_by_cnpj_numero_data(cnpj: str, numero: str, data_emissao: str) -> bool:
+    """Verifica se uma nota já foi importada usando CNPJ + número + data.
+
+    Usado para cruzar com o CSV da Nota Fiscal Paulista, que não tem a chave de acesso.
+    O número é comparado como inteiro para ignorar zeros à esquerda.
+    A data deve estar no formato YYYY-MM-DD.
+    """
+    with _conn() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                """
+                SELECT COUNT(*) AS n
+                FROM nota n
+                JOIN item i ON i.chave_nota = n.chave
+                WHERE n.cnpj_emitente = %s
+                  AND CAST(n.numero AS UNSIGNED) = CAST(%s AS UNSIGNED)
+                  AND n.data_emissao = %s
+                """,
+                (cnpj, numero, data_emissao),
+            )
+            return cur.fetchone()["n"] > 0
+
+
 def ingest_nota(emitente: dict, nota: dict, itens: list[dict]) -> int:
     if nota_already_imported(nota["chave"]):
         raise ValueError("Nota já importada anteriormente.")
