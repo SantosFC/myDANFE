@@ -232,6 +232,51 @@ def nota_exists_by_cnpj_numero_data(cnpj: str, numero: str, data_emissao: str) -
             return cur.fetchone()["n"] > 0
 
 
+def get_notas_csv() -> list[dict]:
+    """Retorna todos os registros da tabela nota_csv com status de importação."""
+    with _conn() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    nc.cnpj_emitente,
+                    nc.nome_emitente,
+                    nc.numero,
+                    nc.data_emissao,
+                    nc.valor_total,
+                    nc.situacao_credito,
+                    EXISTS (
+                        SELECT 1 FROM nota n
+                        JOIN item i ON i.chave_nota = n.chave
+                        WHERE n.cnpj_emitente = nc.cnpj_emitente
+                          AND CAST(n.numero AS UNSIGNED) = CAST(nc.numero AS UNSIGNED)
+                          AND n.data_emissao = nc.data_emissao
+                    ) AS importada
+                FROM nota_csv nc
+                ORDER BY nc.data_emissao DESC, nc.cnpj_emitente
+                """
+            )
+            rows = cur.fetchall()
+    result = []
+    for r in rows:
+        result.append(
+            {
+                "cnpj": r["cnpj_emitente"],
+                "emitente": r["nome_emitente"],
+                "numero": r["numero"],
+                "data_emissao": r["data_emissao"].strftime("%d/%m/%Y")
+                if r["data_emissao"]
+                else "",
+                "valor": float(r["valor_total"])
+                if r["valor_total"] is not None
+                else None,
+                "situacao_credito": r["situacao_credito"] or "",
+                "importada": bool(r["importada"]),
+            }
+        )
+    return result
+
+
 def upsert_nota_csv(
     cnpj_emitente: str,
     nome_emitente: str,

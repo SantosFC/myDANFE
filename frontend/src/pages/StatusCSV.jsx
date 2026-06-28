@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { statusCsv } from "../api";
+import { useEffect, useRef, useState } from "react";
+import { getStatusCsv, statusCsv } from "../api";
 
 // Lê o arquivo como texto, tentando UTF-16 LE primeiro (padrão do portal
 // Nota Fiscal Paulista) e caindo para UTF-8 se não houver BOM.
@@ -17,7 +17,16 @@ export default function StatusCSV() {
   const inputRef = useRef(null);
   const [notas, setNotas] = useState(null);
   const [carregando, setCarregando] = useState(false);
+  const [carregandoInicial, setCarregandoInicial] = useState(true);
   const [erro, setErro] = useState("");
+
+  // Carrega registros já salvos ao abrir a página
+  useEffect(() => {
+    getStatusCsv()
+      .then((dados) => setNotas(dados.notas))
+      .catch(() => {}) // banco vazio ou erro não crítico
+      .finally(() => setCarregandoInicial(false));
+  }, []);
 
   const totalImportadas = notas?.filter((n) => n.importada).length ?? 0;
   const totalPendentes = notas?.filter((n) => !n.importada).length ?? 0;
@@ -69,6 +78,8 @@ export default function StatusCSV() {
           disabled={carregando}
         />
       </div>
+
+      {carregandoInicial && <p className="info">Carregando registros...</p>}
 
       {carregando && <p className="info">Analisando o CSV...</p>}
 

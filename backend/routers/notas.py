@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from backend.db import (
+    get_notas_csv,
     ingest_nota,
     nota_already_imported,
     nota_exists_by_cnpj_numero_data,
@@ -102,6 +103,12 @@ def salvar(req: SaveRequest):
     except Exception as e:
         raise HTTPException(500, detail=str(e))
     return {"itens_salvos": count}
+
+
+@router.get("/status-csv")
+def get_status_csv():
+    """Retorna todos os registros já salvos do CSV com status de importação."""
+    return {"notas": get_notas_csv()}
 
 
 @router.post("/status-csv")
