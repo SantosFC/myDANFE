@@ -19,3 +19,9 @@ export const getTopProdutos = () => api.get("/painel/top-produtos").then((r) => 
 export const getEvolucao = (produto) =>
   api.get(`/painel/evolucao/${encodeURIComponent(produto)}`).then((r) => r.data);
 export const getRegistros = () => api.get("/painel/registros").then((r) => r.data);
+
+export const getStatusCsv = () =>
+  api.get("/notas/status-csv").then((r) => r.data);
+
+export const statusCsv = (conteudo_csv) =>
+  api.post("/notas/status-csv", { conteudo_csv }).then((r) => r.data);
