@@ -11,8 +11,8 @@ export default function App() {
       <nav className="navbar">
         <span className="navbar-brand">myDANFE</span>
         <NavLink to="/" end>Painel</NavLink>
-        <NavLink to="/importar">Importar Nota</NavLink>
         <NavLink to="/status-csv">Status CSV</NavLink>
+        <NavLink to="/importar">Importar Nota</NavLink>
         <NavLink to="/produtos">Produtos</NavLink>
       </nav>
       <main className="container">
