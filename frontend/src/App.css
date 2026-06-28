@@ -29,8 +29,9 @@ body {
 .navbar a.active, .navbar a:hover { color: white; border-bottom-color: white; }
 
 .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
-h1 { font-size: 1.6rem; margin-bottom: 1.5rem; }
-h2 { font-size: 1.2rem; margin-bottom: 1rem; }
+h1 { font-size: 1.6rem; margin-bottom: 1.5rem; color: #1a1a1a; }
+h2 { font-size: 1.2rem; margin-bottom: 1rem; color: #1a1a1a; }
+h3 { font-size: 1rem; margin-bottom: 0.75rem; color: #1a1a1a; }
 
 .card {
   background: white;
