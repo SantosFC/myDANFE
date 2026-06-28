@@ -27,6 +27,7 @@ RE_COD = re.compile(r"Código do Produto\n(\S+)")
 RE_NCM = re.compile(r"Código NCM\n(\d+)")
 RE_EAN = re.compile(r"Código EAN Comercial\n([^\n\t]+)")
 RE_VUNIT = re.compile(r"Valor unitário de comercialização\n([\d,]+)")
+RE_DESC = re.compile(r"Valor do Desconto\n([\d,]+)")
 
 
 def _num(s: str) -> float:
@@ -56,12 +57,17 @@ def parse_txt(txt_path: Path) -> list[Item]:
     ncms = [x.group(1) for x in RE_NCM.finditer(text)]
     eans = [x.group(1) for x in RE_EAN.finditer(text)]
     vunits = [x.group(1) for x in RE_VUNIT.finditer(text)]
+    descontos = [x.group(1) for x in RE_DESC.finditer(text)]
 
     items = []
     for i, it in enumerate(item_matches):
         qtd = _num(it.group(3))
-        vtotal = _num(it.group(5))
-        vunit = _num(vunits[i]) if i < len(vunits) else (vtotal / qtd if qtd else 0)
+        vtotal_bruto = _num(it.group(5))
+        desconto = _num(descontos[i]) if i < len(descontos) else 0.0
+        vtotal = vtotal_bruto - desconto
+        vunit_raw = _num(vunits[i]) if i < len(vunits) else (vtotal_bruto / qtd if qtd else 0)
+        # Recalcula o valor unitário líquido com base no desconto
+        vunit = (vunit_raw - desconto / qtd) if qtd else vunit_raw
         ean_raw = eans[i] if i < len(eans) else ""
         items.append(
             Item(
@@ -74,7 +80,7 @@ def parse_txt(txt_path: Path) -> list[Item]:
                 ncm=ncms[i] if i < len(ncms) else "",
                 unidade=it.group(4),
                 quantidade=qtd,
-                valor_unitario=vunit,
+                valor_unitario=round(vunit, 10),
                 valor_total=vtotal,
                 ean="" if ean_raw.upper() in ("SEM GTIN", "") else ean_raw,
             )

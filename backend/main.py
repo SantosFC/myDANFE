@@ -1,8 +1,11 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from backend.db import init_db
-from backend.routers import notas, produtos, painel
+from backend.routers import notas, painel, produtos
 
 app = FastAPI(title="myDANFE API", version="1.0.0")
 
@@ -27,3 +30,10 @@ app.include_router(painel.router, prefix="/api/painel", tags=["painel"])
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+# Serve o frontend React (arquivos gerados por `npm run build`)
+# Deve ficar depois dos routers para não interceptar as rotas /api
+_static = Path(__file__).parent / "static"
+if _static.exists():
+    app.mount("/", StaticFiles(directory=_static, html=True), name="static")
