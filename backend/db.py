@@ -313,6 +313,32 @@ def upsert_nota_csv(
             )
 
 
+def get_descricao_atual(cnpj_emitente: str, codigo_produto: str) -> str | None:
+    """Retorna o nome atual de um produto (pode ter sido renomeado) buscando
+    o item mais recente do mesmo emitente com o mesmo código de produto.
+
+    Retorna None se o produto nunca foi importado antes.
+    """
+    if not codigo_produto:
+        return None
+    with _conn() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                """
+                SELECT i.descricao_nota
+                FROM item i
+                JOIN nota n ON n.chave = i.chave_nota
+                WHERE n.cnpj_emitente = %s
+                  AND i.codigo_produto_nota = %s
+                ORDER BY n.data_emissao DESC
+                LIMIT 1
+                """,
+                (cnpj_emitente, codigo_produto),
+            )
+            row = cur.fetchone()
+            return row["descricao_nota"] if row else None
+
+
 def ingest_nota(emitente: dict, nota: dict, itens: list[dict]) -> int:
     if nota_already_imported(nota["chave"]):
         raise ValueError("Nota já importada anteriormente.")
@@ -334,10 +360,19 @@ def ingest_nota(emitente: dict, nota: dict, itens: list[dict]) -> int:
     )
     count = 0
     for it in itens:
+        codigo = it.get("codigo_produto", "")
+        descricao = it.get("descricao", "")
+
+        # Se este produto já foi importado antes e teve o nome alterado,
+        # usa o nome atual em vez do nome bruto da nota.
+        descricao_atual = get_descricao_atual(emitente["cnpj"], codigo)
+        if descricao_atual:
+            descricao = descricao_atual
+
         insert_item(
             chave_nota=nota["chave"],
-            codigo_produto_nota=it.get("codigo_produto", ""),
-            descricao_nota=it.get("descricao", ""),
+            codigo_produto_nota=codigo,
+            descricao_nota=descricao,
             ncm=it.get("ncm", ""),
             unidade=it.get("unidade", ""),
             quantidade=it.get("quantidade", 0),
