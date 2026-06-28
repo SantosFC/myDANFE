@@ -65,7 +65,9 @@ def parse_txt(txt_path: Path) -> list[Item]:
         vtotal_bruto = _num(it.group(5))
         desconto = _num(descontos[i]) if i < len(descontos) else 0.0
         vtotal = vtotal_bruto - desconto
-        vunit_raw = _num(vunits[i]) if i < len(vunits) else (vtotal_bruto / qtd if qtd else 0)
+        vunit_raw = (
+            _num(vunits[i]) if i < len(vunits) else (vtotal_bruto / qtd if qtd else 0)
+        )
         # Recalcula o valor unitário líquido com base no desconto
         vunit = (vunit_raw - desconto / qtd) if qtd else vunit_raw
         ean_raw = eans[i] if i < len(eans) else ""
