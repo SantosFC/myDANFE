@@ -11,6 +11,7 @@ from backend.db import (
     ingest_nota,
     nota_already_imported,
     nota_exists_by_cnpj_numero_data,
+    upsert_nota_csv,
 )
 from backend.parsers.nfe_tab_parser import parse_nfe_tab
 from backend.parsers.txt_parser import parse_txt
@@ -163,6 +164,16 @@ def status_csv(req: CsvStatusRequest):
             valor = float(valor_raw.replace(".", "").replace(",", "."))
         except (ValueError, AttributeError):
             valor = None
+
+        # Persiste no banco (incremental — ignora duplicatas pelo índice único)
+        upsert_nota_csv(
+            cnpj_emitente=cnpj,
+            nome_emitente=emitente,
+            numero=numero,
+            data_emissao=data_iso,
+            valor_total=valor,
+            situacao_credito=situacao_credito,
+        )
 
         importada = False
         if data_iso:

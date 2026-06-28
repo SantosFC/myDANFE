@@ -93,6 +93,18 @@ SCHEMA_STATEMENTS = [
         FOREIGN KEY (id_produto_canonico) REFERENCES produto_canonico(id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
+    """
+    CREATE TABLE IF NOT EXISTS nota_csv (
+        id                  INT AUTO_INCREMENT PRIMARY KEY,
+        cnpj_emitente       VARCHAR(14)  NOT NULL,
+        nome_emitente       VARCHAR(255),
+        numero              VARCHAR(20)  NOT NULL,
+        data_emissao        DATE,
+        valor_total         DECIMAL(15,2),
+        situacao_credito    VARCHAR(50),
+        UNIQUE KEY uk_nota_csv (cnpj_emitente, numero, data_emissao)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """,
 ]
 
 
@@ -218,6 +230,42 @@ def nota_exists_by_cnpj_numero_data(cnpj: str, numero: str, data_emissao: str) -
                 (cnpj, numero, data_emissao),
             )
             return cur.fetchone()["n"] > 0
+
+
+def upsert_nota_csv(
+    cnpj_emitente: str,
+    nome_emitente: str,
+    numero: str,
+    data_emissao,
+    valor_total=None,
+    situacao_credito: str = "",
+) -> None:
+    """Insere ou atualiza um registro vindo do CSV da Nota Fiscal Paulista.
+
+    A chave única é (cnpj_emitente, numero, data_emissao).
+    Em caso de conflito, atualiza apenas nome_emitente e situacao_credito.
+    """
+    sql = """
+        INSERT INTO nota_csv
+            (cnpj_emitente, nome_emitente, numero, data_emissao, valor_total, situacao_credito)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE
+            nome_emitente    = VALUES(nome_emitente),
+            situacao_credito = VALUES(situacao_credito)
+    """
+    with _conn() as con:
+        with con.cursor() as cur:
+            cur.execute(
+                sql,
+                (
+                    cnpj_emitente,
+                    nome_emitente,
+                    numero,
+                    data_emissao,
+                    valor_total,
+                    situacao_credito,
+                ),
+            )
 
 
 def ingest_nota(emitente: dict, nota: dict, itens: list[dict]) -> int:
