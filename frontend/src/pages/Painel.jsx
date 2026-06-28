@@ -22,7 +22,7 @@ export default function Painel() {
     getInflacao().then(setInflacao);
     getTopProdutos().then((d) => {
       setTopProdutos(d);
-      const nomes = d.map((p) => p.descricao_nota);
+      const nomes = d.map((p) => p.descricao_nota).sort((a, b) => a.localeCompare(b, "pt-BR"));
       setProdutos(nomes);
       if (nomes.length) { setProdutoSel(nomes[0]); }
     });
