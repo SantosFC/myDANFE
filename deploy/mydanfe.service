@@ -1,0 +1,14 @@
+[Unit]
+Description=myDANFE API
+After=network.target mariadb.service
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/mydanfe
+EnvironmentFile=/opt/mydanfe/.env
+ExecStart=/opt/mydanfe/venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

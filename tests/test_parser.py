@@ -1,11 +1,12 @@
 """Testes unitários do parser de NFe."""
 
+import tempfile
 import textwrap
 from pathlib import Path
-import tempfile
+
 import pytest
 
-from src.parser import parse_xml
+from backend.parsers.xml_parser import parse_xml
 
 SAMPLE_XML = textwrap.dedent("""\
 <?xml version="1.0" encoding="UTF-8"?>
