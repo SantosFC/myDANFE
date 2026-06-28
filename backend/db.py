@@ -361,7 +361,7 @@ def query_all() -> list:
                 FROM item i
                 JOIN nota n ON n.chave = i.chave_nota
                 JOIN emitente e ON e.cnpj = n.cnpj_emitente
-                ORDER BY n.data_emissao
+                ORDER BY n.data_emissao DESC
                 """
             )
             return cur.fetchall()
