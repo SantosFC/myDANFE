@@ -94,6 +94,12 @@ SCHEMA_STATEMENTS = [
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     """,
     """
+    CREATE TABLE IF NOT EXISTS descricao_alias (
+        descricao_original  VARCHAR(255) NOT NULL PRIMARY KEY,
+        descricao_atual     VARCHAR(255) NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    """,
+    """
     CREATE TABLE IF NOT EXISTS nota_csv (
         id                  INT AUTO_INCREMENT PRIMARY KEY,
         cnpj_emitente       VARCHAR(14)  NOT NULL,
@@ -313,30 +319,42 @@ def upsert_nota_csv(
             )
 
 
-def get_descricao_atual(cnpj_emitente: str, codigo_produto: str) -> str | None:
-    """Retorna o nome atual de um produto (pode ter sido renomeado) buscando
-    o item mais recente do mesmo emitente com o mesmo código de produto.
+def get_descricao_atual(
+    cnpj_emitente: str, codigo_produto: str, descricao_original: str = ""
+) -> str | None:
+    """Retorna o nome atual de um produto (pode ter sido renomeado).
 
-    Retorna None se o produto nunca foi importado antes.
+    Para produtos COM código: busca pelo código + cnpj_emitente.
+    Para produtos SEM código: consulta a tabela descricao_alias, que registra
+    todos os renomes feitos pelo usuário.
+    Retorna None se o produto nunca foi importado ou nunca foi renomeado.
     """
-    if not codigo_produto:
-        return None
     with _conn() as con:
         with con.cursor() as cur:
-            cur.execute(
-                """
-                SELECT i.descricao_nota
-                FROM item i
-                JOIN nota n ON n.chave = i.chave_nota
-                WHERE n.cnpj_emitente = %s
-                  AND i.codigo_produto_nota = %s
-                ORDER BY n.data_emissao DESC
-                LIMIT 1
-                """,
-                (cnpj_emitente, codigo_produto),
-            )
-            row = cur.fetchone()
-            return row["descricao_nota"] if row else None
+            if codigo_produto:
+                cur.execute(
+                    """
+                    SELECT i.descricao_nota
+                    FROM item i
+                    JOIN nota n ON n.chave = i.chave_nota
+                    WHERE n.cnpj_emitente = %s
+                      AND i.codigo_produto_nota = %s
+                    ORDER BY n.data_emissao DESC
+                    LIMIT 1
+                    """,
+                    (cnpj_emitente, codigo_produto),
+                )
+                row = cur.fetchone()
+                return row["descricao_nota"] if row else None
+            elif descricao_original:
+                # Sem código: consulta a tabela de aliases construída pelos renomes
+                cur.execute(
+                    "SELECT descricao_atual FROM descricao_alias WHERE descricao_original = %s",
+                    (descricao_original,),
+                )
+                row = cur.fetchone()
+                return row["descricao_atual"] if row else None
+            return None
 
 
 def ingest_nota(emitente: dict, nota: dict, itens: list[dict]) -> int:
@@ -365,7 +383,7 @@ def ingest_nota(emitente: dict, nota: dict, itens: list[dict]) -> int:
 
         # Se este produto já foi importado antes e teve o nome alterado,
         # usa o nome atual em vez do nome bruto da nota.
-        descricao_atual = get_descricao_atual(emitente["cnpj"], codigo)
+        descricao_atual = get_descricao_atual(emitente["cnpj"], codigo, descricao)
         if descricao_atual:
             descricao = descricao_atual
 
@@ -418,7 +436,23 @@ def rename_descricao(old: str, new: str) -> int:
                 "UPDATE item SET descricao_nota = %s WHERE descricao_nota = %s",
                 (new, old),
             )
-            return cur.rowcount
+            count = cur.rowcount
+            # Registra o mapeamento para aplicar automaticamente em novas importações.
+            # Se "old" já era um alias de outra coisa, encadeia: original → new.
+            cur.execute(
+                """
+                INSERT INTO descricao_alias (descricao_original, descricao_atual)
+                VALUES (%s, %s)
+                ON DUPLICATE KEY UPDATE descricao_atual = VALUES(descricao_atual)
+                """,
+                (old, new),
+            )
+            # Atualiza aliases que apontavam para "old" para apontar para "new"
+            cur.execute(
+                "UPDATE descricao_alias SET descricao_atual = %s WHERE descricao_atual = %s",
+                (new, old),
+            )
+            return count
 
 
 def find_similar_aliases(descricao: str, limit: int = 5) -> list:
